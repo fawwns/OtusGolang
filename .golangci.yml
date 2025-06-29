@@ -52,11 +52,13 @@ linters:
           files:
             - $all
             - "!$test"
+            - "!*_test.go" # Явное исключение тестовых файлов для Main
           allow:
             - $gostd
         Test:
           files:
             - $test
+            - "*_test.go" # Тестовые файлы явно включены в Test
           allow:
             - $gostd
             - github.com/stretchr/testify
