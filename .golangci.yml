@@ -51,7 +51,7 @@ linters:
         Main:
           files:
             - $all
-            - '!$test'
+            - "!$test"
           allow:
             - $gostd
         Test:
