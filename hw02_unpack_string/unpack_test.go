@@ -3,7 +3,7 @@ package hw02unpackstring
 import (
 	"errors"
 	"testing"
-
+	//nolint:depguard
 	"github.com/stretchr/testify/require"
 )
 
