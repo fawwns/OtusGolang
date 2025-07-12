@@ -43,11 +43,42 @@ var text = `Как видите, он  спускается  по  лестни�
 	посидеть у огня и послушать какую-нибудь интересную сказку.
 		В этот вечер...`
 
+var textTwo = `Звонок прозвенел. Она встала. он спал. Она ушла. Он проспал.`
+
 func TestTop10(t *testing.T) {
 	t.Run("no words in empty string", func(t *testing.T) {
 		require.Len(t, Top10(""), 0)
 	})
 
+	t.Run("less than 10 unique words", func(t *testing.T) {
+		if taskWithAsteriskIsCompleted {
+			expected := []string{
+				"он",        // 2
+				"она",       // 2
+				"встала",    // 1
+				"звонок",    // 1
+				"прозвенел", // 1
+				"проспал",   // 1
+				"спал",      // 1
+				"ушла",      // 1
+
+			}
+			require.Equal(t, expected, Top10(textTwo))
+		} else {
+			expected := []string{
+				"Она",        // 2
+				"Звонок",     // 1
+				"Он",         // 1
+				"встала.",    // 1
+				"он",         // 1
+				"прозвенел.", // 1
+				"проспал.",   // 1
+				"спал.",      // 1
+				"ушла.",      // 1
+			}
+			require.Equal(t, expected, Top10(textTwo))
+		}
+	})
 	t.Run("positive test", func(t *testing.T) {
 		if taskWithAsteriskIsCompleted {
 			expected := []string{
