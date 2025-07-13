@@ -78,7 +78,6 @@ func (l *list) PushBack(v interface{}) *ListItem {
 
 // Remove - удаляет эллемент из списка.
 func (l *list) Remove(i *ListItem) {
-
 	if i.Prev == nil {
 		l.front = i.Next
 		if l.front != nil {

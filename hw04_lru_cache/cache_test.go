@@ -90,7 +90,6 @@ func TestCache(t *testing.T) {
 		val, ok = c.Get("vova")
 		require.True(t, ok)
 		require.Equal(t, 400, val)
-
 	})
 
 	t.Run("eviction by usage", func(t *testing.T) {
