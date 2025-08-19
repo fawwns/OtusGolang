@@ -54,9 +54,7 @@ func Run(tasks []Task, n, m int) error {
 						mu.Unlock()
 					}
 				}
-
 			}
-
 		}(ctx)
 
 	}
@@ -68,8 +66,6 @@ func Run(tasks []Task, n, m int) error {
 	wg.Wait()
 	if countErr >= m {
 		return ErrErrorsLimitExceeded
-	} else {
-		return nil
 	}
-
+	return nil
 }
