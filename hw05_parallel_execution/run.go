@@ -32,7 +32,15 @@ func runTask(task Task, mu *sync.Mutex, countErr *int, m int, cancel context.Can
 	return false
 }
 
-func worker(ctx context.Context, ch <-chan Task, m int, mu *sync.Mutex, countErr *int, cancel context.CancelFunc, wg *sync.WaitGroup) {
+func worker(
+	ctx context.Context,
+	ch <-chan Task,
+	m int,
+	mu *sync.Mutex,
+	countErr *int,
+	cancel context.CancelFunc,
+	wg *sync.WaitGroup,
+) {
 	defer wg.Done()
 	for {
 		select {
