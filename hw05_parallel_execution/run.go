@@ -10,6 +10,45 @@ var ErrErrorsLimitExceeded = errors.New("errors limit exceeded")
 
 type Task func() error
 
+func runTask(task Task, mu *sync.Mutex, countErr *int, m int, cancel context.CancelFunc) (stop bool) {
+	mu.Lock()
+	if *countErr >= m {
+		mu.Unlock()
+		cancel()
+		return true
+	}
+	mu.Unlock()
+
+	if err := task(); err != nil {
+		mu.Lock()
+		*countErr++
+		if *countErr >= m {
+			mu.Unlock()
+			cancel()
+			return true
+		}
+		mu.Unlock()
+	}
+	return false
+}
+
+func worker(ctx context.Context, ch <-chan Task, m int, mu *sync.Mutex, countErr *int, cancel context.CancelFunc, wg *sync.WaitGroup) {
+	defer wg.Done()
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case task, ok := <-ch:
+			if !ok {
+				return
+			}
+			if runTask(task, mu, countErr, m, cancel) {
+				return
+			}
+		}
+	}
+}
+
 func Run(tasks []Task, n, m int) error {
 	if m <= 0 { // максимум 0 ошибок — сразу ошибка
 		return ErrErrorsLimitExceeded
@@ -24,39 +63,7 @@ func Run(tasks []Task, n, m int) error {
 
 	for i := 0; i < n; i++ {
 		wg.Add(1)
-		go func(ctx context.Context) {
-			defer wg.Done()
-			for {
-				select {
-				case <-ctx.Done():
-					return
-				case task, ok := <-ch:
-					if !ok {
-						return
-					}
-					mu.Lock()
-					if countErr >= m {
-						mu.Unlock()
-						cancel()
-						return
-					}
-					mu.Unlock()
-
-					// Выполняем задачу
-					if err := task(); err != nil {
-						mu.Lock()
-						countErr++
-						if countErr >= m {
-							mu.Unlock()
-							cancel()
-							return
-						}
-						mu.Unlock()
-					}
-				}
-			}
-		}(ctx)
-
+		go worker(ctx, ch, m, &mu, &countErr, cancel, &wg)
 	}
 
 	for _, val := range tasks {
