@@ -18,5 +18,17 @@ func init() {
 
 func main() {
 	flag.Parse()
-	// Place your code here.
+
+	if from == "" || to == "" {
+		println("Usage: -from <source file> -to <destination file> [-offset N] [-limit N]")
+		return
+	}
+
+	err := Copy(from, to, offset, limit)
+	if err != nil {
+		println("Error:", err.Error())
+		return
+	}
+
+	println("File copied successfully!")
 }
