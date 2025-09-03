@@ -14,28 +14,21 @@ var (
 	ErrOffsetExceedsFileSize = errors.New("offset exceeds file size")
 )
 
-func checkErr(err error) error {
-	if err != nil {
-		return ErrUnsupportedFile
-	}
-	return nil
-}
-
 func Copy(fromPath, toPath string, offset, limit int64) error {
 	file, err := os.Open(fromPath)
-	if err := checkErr(err); err != nil {
+	if err != nil {
 		return err
 	}
 	defer file.Close()
 
 	copyFile, err := os.Create(toPath)
-	if err := checkErr(err); err != nil {
+	if err != nil {
 		return err
 	}
 	defer copyFile.Close()
 
 	fileInfo, err := file.Stat()
-	if err := checkErr(err); err != nil {
+	if err != nil {
 		return err
 	}
 	size := fileInfo.Size()
@@ -49,13 +42,17 @@ func Copy(fromPath, toPath string, offset, limit int64) error {
 	}
 
 	_, err = file.Seek(offset, io.SeekStart)
-	if err := checkErr(err); err != nil {
+	if err != nil {
 		return err
 	}
 
 	bytesToCopy := limit
 	if limit == 0 || offset+limit > size {
 		bytesToCopy = size - offset
+	}
+
+	if bytesToCopy == 0 {
+		return nil
 	}
 
 	bar := pb.Full.Start64(bytesToCopy)

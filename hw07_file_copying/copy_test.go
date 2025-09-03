@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"os"
 	"testing"
 )
@@ -51,12 +52,14 @@ func TestCopy(t *testing.T) {
 
 			// вызов функции Copy.
 			err = Copy("testdata/input.txt", dst.Name(), tt.offset, tt.limit)
-			if err != tt.err {
+			if !errors.Is(err, tt.err) {
 				t.Fatalf("unexpected error: got %v, want %v", err, tt.err)
 			}
 
 			// сравнение результата с эталонным файлом.
-			equalFiles(t, dst.Name(), tt.want)
+			if tt.err == nil {
+				equalFiles(t, dst.Name(), tt.want)
+			}
 		})
 	}
 }
@@ -67,7 +70,7 @@ func TestCopyOffsetTooLarge(t *testing.T) {
 	defer os.Remove(dst.Name())
 
 	err := Copy("testdata/input.txt", dst.Name(), 999999, 0)
-	if err != ErrOffsetExceedsFileSize {
+	if !errors.Is(err, ErrOffsetExceedsFileSize) {
 		t.Errorf("expected %v, got %v", ErrOffsetExceedsFileSize, err)
 	}
 }
