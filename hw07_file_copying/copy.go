@@ -5,6 +5,7 @@ import (
 	"io"
 	"os"
 
+	//nolint:depguard
 	"github.com/cheggaaa/pb/v3"
 )
 
@@ -61,7 +62,7 @@ func Copy(fromPath, toPath string, offset, limit int64) error {
 	barReader := bar.NewProxyReader(file)
 
 	_, err = io.CopyN(copyFile, barReader, bytesToCopy)
-	if err != nil && err != io.EOF {
+	if err != nil && !errors.Is(err, io.EOF) {
 		return err
 	}
 

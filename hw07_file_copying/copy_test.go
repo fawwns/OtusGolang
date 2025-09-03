@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-// вспомогательная функция — сравнение файлов
+// вспомогательная функция — сравнение файлов.
 func equalFiles(t *testing.T, path1, path2 string) {
 	t.Helper()
 
@@ -28,7 +28,7 @@ func TestCopy(t *testing.T) {
 		name   string
 		offset int64
 		limit  int64
-		want   string // путь к эталонному файлу
+		want   string // путь к эталонному файлу.
 		err    error
 	}{
 		{"offset0_limit0", 0, 0, "testdata/out_offset0_limit0.txt", nil},
@@ -41,7 +41,7 @@ func TestCopy(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// создаём временный файл-результат
+			// создаём временный файл-результат.
 			dst, err := os.CreateTemp("", "copy-*.txt")
 			if err != nil {
 				t.Fatal(err)
@@ -49,13 +49,13 @@ func TestCopy(t *testing.T) {
 			dst.Close()
 			defer os.Remove(dst.Name())
 
-			// вызов функции Copy
+			// вызов функции Copy.
 			err = Copy("testdata/input.txt", dst.Name(), tt.offset, tt.limit)
 			if err != tt.err {
 				t.Fatalf("unexpected error: got %v, want %v", err, tt.err)
 			}
 
-			// сравнение результата с эталонным файлом
+			// сравнение результата с эталонным файлом.
 			equalFiles(t, dst.Name(), tt.want)
 		})
 	}
