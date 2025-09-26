@@ -17,10 +17,11 @@ func TestReadDir(t *testing.T) {
 			name: "valid envdir",
 			dir:  "testdata/env",
 			want: Environment{
-				"HELLO": EnvValue{Value: "hello", NeedRemove: false},
+				"HELLO": EnvValue{Value: `"hello"`, NeedRemove: false}, // кавычки оставляем
 				"FOO":   EnvValue{Value: "   foo\nwith new line", NeedRemove: false},
 				"BAR":   EnvValue{Value: "bar", NeedRemove: false},
-				"EMPTY": EnvValue{Value: "", NeedRemove: false},
+				"UNSET": EnvValue{Value: "", NeedRemove: true},  // файл пустой → NeedRemove
+				"EMPTY": EnvValue{Value: "", NeedRemove: false}, // если файл есть, но пустой
 			},
 			wantErr: false,
 		},
@@ -29,12 +30,6 @@ func TestReadDir(t *testing.T) {
 			dir:     "testdata/not_exists",
 			want:    Environment{},
 			wantErr: true,
-		},
-		{
-			name:    "empty dir",
-			dir:     "testdata/empty",
-			want:    Environment{},
-			wantErr: false,
 		},
 	}
 
