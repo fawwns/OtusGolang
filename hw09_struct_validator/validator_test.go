@@ -80,10 +80,11 @@ func TestValidate(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for _, tc := range tests {
+		tc := tc // избегаем проблем с замыканием
+		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			checkValidation(t, tt.input, tt.expectedErr)
+			checkValidation(t, tc.input, tc.expectedErr)
 		})
 	}
 }
@@ -104,8 +105,8 @@ func checkValidation(t *testing.T, input interface{}, expected error) {
 		t.Fatalf("expected ValidationErrors, got %T", err)
 	}
 
-	wantErrs, ok := expected.(ValidationErrors)
-	if !ok {
+	var wantErrs ValidationErrors
+	if !errors.As(expected, &wantErrs) {
 		t.Fatalf("expected ValidationErrors, got %T", expected)
 	}
 
