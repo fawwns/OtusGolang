@@ -1,4 +1,3 @@
-// package hw09structvalidator
 package hw09structvalidator
 
 import (
@@ -68,7 +67,8 @@ func Validate(v interface{}) error {
 			}
 
 			if err := applyRule(fv, field.Name, name, arg); err != nil {
-				if vErrs, ok := err.(ValidationErrors); ok {
+				var vErrs ValidationErrors
+				if errors.As(err, &vErrs) {
 					errs = append(errs, vErrs...)
 				} else {
 					errs = append(errs, ValidationError{
