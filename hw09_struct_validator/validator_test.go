@@ -70,8 +70,10 @@ func TestValidate(t *testing.T) {
 			expectedErr: nil,
 		},
 		{
-			name:  "invalid response code",
-			input: Response{Code: 123},
+			name: "invalid response code",
+			input: Response{
+				Code: 123,
+			},
 			expectedErr: ValidationErrors{
 				{Field: "Code", Err: ErrIn},
 			},
@@ -79,7 +81,6 @@ func TestValidate(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		tt := tt // copy loop variable
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 			checkValidation(t, tt.input, tt.expectedErr)
@@ -89,8 +90,8 @@ func TestValidate(t *testing.T) {
 
 func checkValidation(t *testing.T, input interface{}, expected error) {
 	t.Helper()
-	err := Validate(input)
 
+	err := Validate(input)
 	if expected == nil {
 		if err != nil {
 			t.Errorf("expected no error, got %v", err)
@@ -103,9 +104,9 @@ func checkValidation(t *testing.T, input interface{}, expected error) {
 		t.Fatalf("expected ValidationErrors, got %T", err)
 	}
 
-	var wantErrs ValidationErrors
-	if !errors.As(expected, &wantErrs) {
-		t.Fatalf("expected expectedErr to be ValidationErrors, got %T", expected)
+	wantErrs, ok := expected.(ValidationErrors)
+	if !ok {
+		t.Fatalf("expected ValidationErrors, got %T", expected)
 	}
 
 	if len(gotErrs) != len(wantErrs) {
@@ -117,7 +118,8 @@ func checkValidation(t *testing.T, input interface{}, expected error) {
 			t.Errorf("expected field %q, got %q", wantErrs[i].Field, gotErrs[i].Field)
 		}
 		if !errors.Is(gotErrs[i].Err, wantErrs[i].Err) {
-			t.Errorf("field %q: expected error %v, got %v", gotErrs[i].Field, wantErrs[i].Err, gotErrs[i].Err)
+			t.Errorf("field %q: expected error %v, got %v",
+				wantErrs[i].Field, wantErrs[i].Err, gotErrs[i].Err)
 		}
 	}
 }
