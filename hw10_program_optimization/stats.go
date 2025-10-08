@@ -6,6 +6,7 @@ import (
 	"regexp"
 	"strings"
 
+	//nolint:depguard
 	"github.com/buger/jsonparser"
 )
 
@@ -30,7 +31,6 @@ func GetDomainStat(r io.Reader, domain string) (DomainStat, error) {
 		line := scanner.Bytes()
 
 		email, err := jsonparser.GetString(line, "Email")
-
 		if err != nil {
 			result["example.com"]++
 			continue
