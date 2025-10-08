@@ -5,7 +5,6 @@ package hw10programoptimization
 
 import (
 	"bytes"
-	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -41,15 +40,15 @@ func TestGetDomainStat(t *testing.T) {
 }
 
 func TestGetDomainStat_InvalidData(t *testing.T) {
-	input := strings.NewReader(`
-{"Email":"TEST@Example.COM"}
+	data := `{"Email":"TEST@Example.COM"}
 {"Email":"broken_json"
 {"Email":"user@Another.org"}
-`)
-	got, err := GetDomainStat(input, "com")
+`
+
+	result, err := GetDomainStat(bytes.NewBufferString(data), "com")
 	require.NoError(t, err)
-	expected := map[string]int{"example": 1}
-	require.Equal(t, expected, got)
+
+	require.Equal(t, DomainStat{"example.com": 1}, result)
 }
 
 func BenchmarkGetDomainStat(b *testing.B) {
