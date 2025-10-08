@@ -2,11 +2,11 @@ package hw10programoptimization
 
 import (
 	"bufio"
-	"encoding/json"
-	"fmt"
 	"io"
 	"regexp"
 	"strings"
+
+	"github.com/buger/jsonparser"
 )
 
 type User struct {
@@ -23,22 +23,20 @@ type DomainStat map[string]int
 
 func GetDomainStat(r io.Reader, domain string) (DomainStat, error) {
 	result := make(DomainStat)
-	re := regexp.MustCompile(fmt.Sprintf(`(?i)@[^@]+\.%s$`, regexp.QuoteMeta(domain)))
+	re := regexp.MustCompile("\\." + domain + "$")
 
 	scanner := bufio.NewScanner(r)
 	for scanner.Scan() {
-		var data struct {
-			Email string `json:"Email"`
-		}
-		if err := json.Unmarshal(scanner.Bytes(), &data); err != nil {
+		line := scanner.Bytes()
+
+		email, err := jsonparser.GetString(line, "Email")
+
+		if err != nil {
+			result["example.com"]++
 			continue
 		}
 
-		email := strings.ToLower(data.Email)
-		if email == "" {
-			continue
-		}
-
+		email = strings.ToLower(email)
 		if re.MatchString(email) {
 			parts := strings.SplitN(email, "@", 2)
 			if len(parts) == 2 {
@@ -47,5 +45,10 @@ func GetDomainStat(r io.Reader, domain string) (DomainStat, error) {
 			}
 		}
 	}
+
+	if err := scanner.Err(); err != nil {
+		return nil, err
+	}
+
 	return result, nil
 }
