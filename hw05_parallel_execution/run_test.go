@@ -56,6 +56,29 @@ func TestRun(t *testing.T) {
 			})
 		}
 
+		t.Run("zero errors allowed (m = 0)", func(t *testing.T) {
+			tasksCount := 10
+			tasks := make([]Task, 0, tasksCount)
+
+			var runTasksCount int32
+
+			for i := 0; i < tasksCount; i++ {
+				tasks = append(tasks, func() error {
+					atomic.AddInt32(&runTasksCount, 1)
+					return errors.New("some error")
+				})
+			}
+
+			workersCount := 3
+			maxErrorsCount := 0
+
+			err := Run(tasks, workersCount, maxErrorsCount)
+
+			require.ErrorIs(t, err, ErrErrorsLimitExceeded, "expected ErrErrorsLimitExceeded when m = 0")
+			require.LessOrEqual(t, runTasksCount, int32(workersCount),
+				"tasks should stop almost immediately if m = 0")
+		})
+
 		workersCount := 5
 		maxErrorsCount := 1
 
