@@ -4,7 +4,6 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"net"
 	"os"
 	"os/signal"
 	"syscall"
@@ -16,42 +15,39 @@ func main() {
 	flag.Parse()
 
 	if flag.NArg() < 2 {
-		fmt.Fprintln(os.Stderr, "Usage: go-telnet [--timeout=10s] host port")
+		fmt.Println("Usage: go-telnet [--timeout=10s] host port")
 		os.Exit(1)
 	}
 
 	host := flag.Arg(0)
 	port := flag.Arg(1)
-	address := net.JoinHostPort(host, port)
+	address := host + ":" + port
 
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
 	client := NewTelnetClient(address, *timeout, os.Stdin, os.Stdout)
-
 	if err := client.Connect(); err != nil {
-		fmt.Fprintf(os.Stderr, "Error connecting: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Error connecting: %s\n", err)
 		os.Exit(1)
 	}
-	fmt.Fprintf(os.Stderr, "...Connected to %s\n", address)
-
-	done := make(chan struct{})
+	defer client.Close()
 
 	go func() {
-		defer close(done)
-		client.Receive()
+		<-ctx.Done()
+		fmt.Fprintln(os.Stderr, "...Connection closed")
+		client.Close()
+		os.Exit(0)
 	}()
 
 	go func() {
-		client.Send()
-		client.Close()
+		if err := client.Receive(); err != nil {
+			fmt.Fprintln(os.Stderr, "...Connection closed by peer")
+			os.Exit(0)
+		}
 	}()
 
-	select {
-	case <-ctx.Done():
-		client.Close()
-	case <-done:
+	if err := client.Send(); err != nil {
+		fmt.Fprintln(os.Stderr, "...EOF")
 	}
-
-	fmt.Fprintln(os.Stderr, "...Connection closed")
 }
