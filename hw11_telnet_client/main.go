@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"flag"
+	"fmt"
 	"net"
 	"os"
 	"os/signal"
@@ -15,8 +16,8 @@ func main() {
 	flag.Parse()
 
 	if flag.NArg() < 2 {
-		println("Usage: go-telnet [--timeout=10s] host port")
-		return
+		fmt.Fprintln(os.Stderr, "Usage: go-telnet [--timeout=10s] host port")
+		os.Exit(1)
 	}
 
 	host := flag.Arg(0)
@@ -26,10 +27,31 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
+	client := NewTelnetClient(address, *timeout, os.Stdin, os.Stdout)
+
+	if err := client.Connect(); err != nil {
+		fmt.Fprintf(os.Stderr, "Error connecting: %v\n", err)
+		os.Exit(1)
+	}
+	fmt.Fprintf(os.Stderr, "...Connected to %s\n", address)
+
+	done := make(chan struct{})
+
 	go func() {
-		<-ctx.Done()
-		os.Exit(0)
+		defer close(done)
+		client.Receive()
 	}()
 
-	NewTelnetClient(address, *timeout, os.Stdin, os.Stdout)
+	go func() {
+		client.Send()
+		client.Close()
+	}()
+
+	select {
+	case <-ctx.Done():
+		client.Close()
+	case <-done:
+	}
+
+	fmt.Fprintln(os.Stderr, "...Connection closed")
 }
