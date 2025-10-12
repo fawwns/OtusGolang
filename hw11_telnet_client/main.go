@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"sync"
 	"syscall"
 	"time"
 )
@@ -29,25 +30,33 @@ func main() {
 	client := NewTelnetClient(address, *timeout, os.Stdin, os.Stdout)
 	if err := client.Connect(); err != nil {
 		fmt.Fprintf(os.Stderr, "Error connecting: %s\n", err)
+		stop()
 		os.Exit(1)
 	}
 	defer client.Close()
+
+	var wg sync.WaitGroup
+	wg.Add(2)
+
+	go func() {
+		defer wg.Done()
+		if err := client.Receive(); err != nil {
+			fmt.Fprintln(os.Stderr, "...Connection closed by peer")
+		}
+	}()
+
+	go func() {
+		defer wg.Done()
+		if err := client.Send(); err != nil {
+			fmt.Fprintln(os.Stderr, "...EOF")
+		}
+	}()
 
 	go func() {
 		<-ctx.Done()
 		fmt.Fprintln(os.Stderr, "...Connection closed")
 		client.Close()
-		os.Exit(0)
 	}()
 
-	go func() {
-		if err := client.Receive(); err != nil {
-			fmt.Fprintln(os.Stderr, "...Connection closed by peer")
-			os.Exit(0)
-		}
-	}()
-
-	if err := client.Send(); err != nil {
-		fmt.Fprintln(os.Stderr, "...EOF")
-	}
+	wg.Wait()
 }
