@@ -1,5 +1,17 @@
-[logger]
-level = "INFO"
+logger:
+  level: "INFO"
 
-# TODO
-# ...
+server:
+  host: "127.0.0.1"
+  port: 8080
+
+
+storage:
+  active: sql      
+
+  sql:
+   dsn: "postgres://postgres:1234@localhost:5432/calendar?sslmode=disable"
+
+  inmemory:
+   enabled: true
+
