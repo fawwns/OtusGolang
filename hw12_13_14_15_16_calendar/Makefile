@@ -33,4 +33,12 @@ install-lint-deps:
 lint: install-lint-deps
 	golangci-lint run ./...
 
+postgres:
+	docker run --name calendar-postgres \
+		-e POSTGRES_USER=postgres \
+		-e POSTGRES_PASSWORD=postgres \
+		-e POSTGRES_DB=calendar \
+		-p 5432:5432 \
+		-d postgres:15
+		
 .PHONY: build run build-img run-img version test lint

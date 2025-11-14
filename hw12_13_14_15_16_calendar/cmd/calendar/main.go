@@ -38,9 +38,9 @@ func main() {
 	ctx := context.Background()
 	var storage app.Storage
 
-	switch config.Storage.Active {
+	switch config.Storage.Type {
 	case "sql":
-		sqlStorage := sqlstorage.New(config.Storage.SQL.DSN)
+		sqlStorage := sqlstorage.New(config.Storage.DSN)
 		if err := sqlStorage.Connect(ctx); err != nil {
 			logg.Error("failed to connect to SQL DB: " + err.Error())
 			return
@@ -51,7 +51,7 @@ func main() {
 		storage = memorystorage.New()
 
 	default:
-		logg.Error("unknown storage type in config: " + config.Storage.Active)
+		logg.Error("unknown storage type in config: " + config.Storage.Type)
 		return
 	}
 

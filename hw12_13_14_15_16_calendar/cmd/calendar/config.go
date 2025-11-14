@@ -22,9 +22,9 @@ type LoggerConf struct {
 	Level string `yaml:"level"`
 }
 type StorageConfig struct {
-	Active   string       `yaml:"active"`
-	SQL      SQLConfig    `yaml:"sql"`
-	InMemory InMemoryConf `yaml:"inmemory"`
+	Type string `yaml:"type"` // "sql" или "inmemory".
+	DSN  string `yaml:"dsn"`  // Используется только если Type="sql".
+	Code string `yaml:"code"` // Опционально, если требуется.
 }
 type SQLConfig struct {
 	DSN string `yaml:"dsn"`
