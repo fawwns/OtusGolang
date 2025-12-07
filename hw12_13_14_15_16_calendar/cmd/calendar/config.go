@@ -9,11 +9,17 @@ import (
 
 type Config struct {
 	Server  ServerConf    `yaml:"server"`
+	GRPC    GRPC          `yaml:"grpc"`
 	Logger  LoggerConf    `yaml:"logger"`
 	Storage StorageConfig `yaml:"storage"`
 }
 
 type ServerConf struct {
+	Host string `yaml:"host"`
+	Port int    `yaml:"port"`
+}
+
+type GRPC struct {
 	Host string `yaml:"host"`
 	Port int    `yaml:"port"`
 }

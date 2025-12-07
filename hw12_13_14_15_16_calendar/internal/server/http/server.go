@@ -7,55 +7,45 @@ import (
 	"time"
 
 	"github.com/fawwns/OtusGolang/hw12_13_14_15_calendar/internal/app"
+	"github.com/fawwns/OtusGolang/hw12_13_14_15_calendar/internal/logger"
+	"github.com/gorilla/mux"
 )
 
 type Server struct {
-	httpServer *http.Server
-	logger     app.Logger
-	app        app.Application
+	logg   *logger.Logger
+	srv    *http.Server
+	app    app.Application
+	router *mux.Router
 }
 
-func NewServer(logger app.Logger, application app.Application, host string, port int) *Server {
-	mux := http.NewServeMux()
-
-	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		start := time.Now()
-
-		fmt.Fprintf(w, "Hello, Calendar!\n")
-		duration := time.Since(start)
-
-		clientIP := r.RemoteAddr
-		method := r.Method
-		path := r.URL.Path
-		proto := r.Proto
-		userAgent := r.UserAgent()
-
-		logger.Info(fmt.Sprintf("%s %s %s %s %s %d %v %s",
-			clientIP,
-			time.Now().Format("02/Jan/2006:15:04:05 -0700"),
-			method, path, proto, 200, duration, userAgent))
-	})
-
-	addr := fmt.Sprintf("%s:%d", host, port)
-
-	srv := &http.Server{
-		Addr:    addr,
-		Handler: mux,
+func NewServer(logger *logger.Logger, application app.Application, host string, port int) *Server {
+	r := mux.NewRouter()
+	s := &Server{
+		logg:   logger,
+		app:    application,
+		router: r,
 	}
 
-	return &Server{
-		httpServer: srv,
-		logger:     logger,
-		app:        application,
+	s.registerHandlers()
+	s.router.Use(LoggingMiddleware)
+
+	s.srv = &http.Server{
+		Addr:         fmt.Sprintf("%s:%d", host, port),
+		Handler:      r,
+		ReadTimeout:  5 * time.Second,
+		WriteTimeout: 10 * time.Second,
+		IdleTimeout:  120 * time.Second,
 	}
+
+	return s
 }
 
 func (s *Server) Start(ctx context.Context) error {
-	s.logger.Info("Starting HTTP server on " + s.httpServer.Addr)
+	s.logg.Info("Starting HTTP server on " + s.srv.Addr)
 
 	go func() {
-		if err := s.httpServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			s.logger.Error("HTTP Server ListenAndServe: " + err.Error())
+		if err := s.srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			s.logg.Error("HTTP Server ListenAndServe: " + err.Error())
 		}
 	}()
 
@@ -64,6 +54,10 @@ func (s *Server) Start(ctx context.Context) error {
 }
 
 func (s *Server) Stop(ctx context.Context) error {
-	s.logger.Info("Stopping HTTP server...")
-	return s.httpServer.Shutdown(ctx)
+	s.logg.Info("Stopping HTTP server...")
+	return s.srv.Shutdown(ctx)
+}
+
+func (s *Server) Router() http.Handler {
+	return s.router
 }

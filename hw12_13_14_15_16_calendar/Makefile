@@ -41,4 +41,8 @@ postgres:
 		-p 5432:5432 \
 		-d postgres:15
 		
+generate:
+	go generate ./...
+
+
 .PHONY: build run build-img run-img version test lint

@@ -25,6 +25,7 @@ type Storage interface {
 
 type Application interface {
 	CreateEvent(ctx context.Context, event storage.Event) error
+	UpdateEvent(ctx context.Context, e storage.Event) error
 	DeleteEvent(ctx context.Context, id string) error
 	ListDayEvents(ctx context.Context, date time.Time) ([]storage.Event, error)
 	ListWeekEvents(ctx context.Context, start time.Time) ([]storage.Event, error)
@@ -81,6 +82,10 @@ func (a *App) DeleteEvent(ctx context.Context, id string) error {
 
 	a.logger.Info("Event deleted: " + id)
 	return nil
+}
+
+func (a *App) UpdateEvent(ctx context.Context, e storage.Event) error {
+	return a.storage.Update(e)
 }
 
 func (a *App) ListDayEvents(ctx context.Context, date time.Time) ([]storage.Event, error) {

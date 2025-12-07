@@ -5,6 +5,10 @@ server:
   host: "127.0.0.1"
   port: 8080
 
+grpc:
+  host: "127.0.0.1"
+  port: 50051
+  
 storage:
   type: "inmemory"
   dsn: "postgres://postgres:1234@localhost:5432/calendar?sslmode=disable"

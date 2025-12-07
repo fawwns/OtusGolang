@@ -3,16 +3,20 @@ package main
 import (
 	"context"
 	"flag"
-	"os"
+	"fmt"
+	"net"
 	"os/signal"
 	"syscall"
 	"time"
 
+	pb "github.com/fawwns/OtusGolang/hw12_13_14_15_calendar/api/proto"
 	"github.com/fawwns/OtusGolang/hw12_13_14_15_calendar/internal/app"
 	"github.com/fawwns/OtusGolang/hw12_13_14_15_calendar/internal/logger"
+	"github.com/fawwns/OtusGolang/hw12_13_14_15_calendar/internal/server/grpcserver"
 	internalhttp "github.com/fawwns/OtusGolang/hw12_13_14_15_calendar/internal/server/http"
 	memorystorage "github.com/fawwns/OtusGolang/hw12_13_14_15_calendar/internal/storage/memory"
 	sqlstorage "github.com/fawwns/OtusGolang/hw12_13_14_15_calendar/internal/storage/sql"
+	"google.golang.org/grpc"
 )
 
 var configFile string
@@ -35,7 +39,14 @@ func main() {
 	}
 
 	logg := logger.New(config.Logger.Level)
-	ctx := context.Background()
+	unaryInterceptor := grpcserver.UnaryLoggingInterceptor(logg)
+
+	ctx, cancel := signal.NotifyContext(
+		context.Background(),
+		syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP,
+	)
+	defer cancel()
+
 	var storage app.Storage
 
 	switch config.Storage.Type {
@@ -59,26 +70,43 @@ func main() {
 
 	server := internalhttp.NewServer(logg, calendar, config.Server.Host, config.Server.Port)
 
-	ctx, cancel := signal.NotifyContext(context.Background(),
-		syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
-	defer cancel()
+	go func() {
+		if err := server.Start(ctx); err != nil {
+			logg.Error("HTTP server error: " + err.Error())
+			cancel()
+		}
+	}()
+
+	addrGRPC := fmt.Sprintf("%s:%d", config.GRPC.Host, config.GRPC.Port)
+	logg.Info("Starting gRPC server at " + addrGRPC)
+
+	grpcServer := grpc.NewServer(grpc.UnaryInterceptor(unaryInterceptor))
+	grpcHandler := grpcserver.New(calendar)
+
+	grpcListener, err := net.Listen("tcp", addrGRPC)
+	if err != nil {
+		logg.Error("failed to listen grpc: " + err.Error())
+		return
+	}
+
+	pb.RegisterCalendarServiceServer(grpcServer, grpcHandler)
 
 	go func() {
-		<-ctx.Done()
-
-		ctx, cancel := context.WithTimeout(context.Background(), time.Second*3)
-		defer cancel()
-
-		if err := server.Stop(ctx); err != nil {
-			logg.Error("failed to stop http server: " + err.Error())
+		logg.Info("gRPC server on " + addrGRPC)
+		if err := grpcServer.Serve(grpcListener); err != nil {
+			logg.Error("gRPC error: " + err.Error())
+			cancel()
 		}
 	}()
 
 	logg.Info("calendar is running...")
 
-	if err := server.Start(ctx); err != nil {
-		logg.Error("failed to start http server: " + err.Error())
-		cancel()
-		os.Exit(1)
-	}
+	<-ctx.Done()
+	logg.Info("shutdown...")
+
+	httpCtx, httpCancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer httpCancel()
+	server.Stop(httpCtx)
+
+	grpcServer.GracefulStop()
 }
