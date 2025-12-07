@@ -4,11 +4,13 @@ DOCKER_IMG="calendar:develop"
 GIT_HASH := $(shell git log --format="%h" -n 1)
 LDFLAGS := -X main.release="develop" -X main.buildDate=$(shell date -u +%Y-%m-%dT%H:%M:%S) -X main.gitHash=$(GIT_HASH)
 
+STORAGE ?= sql
+
 build:
 	go build -v -o $(BIN) -ldflags "$(LDFLAGS)" ./cmd/calendar
 
 run: build
-	$(BIN) -config ./configs/config.toml
+	$(BIN) -config ./configs/config.yaml
 
 build-img:
 	docker build \
@@ -30,5 +32,17 @@ install-lint-deps:
 
 lint: install-lint-deps
 	golangci-lint run ./...
+
+postgres:
+	docker run --name calendar-postgres \
+		-e POSTGRES_USER=postgres \
+		-e POSTGRES_PASSWORD=postgres \
+		-e POSTGRES_DB=calendar \
+		-p 5432:5432 \
+		-d postgres:15
+		
+generate:
+	go generate ./...
+
 
 .PHONY: build run build-img run-img version test lint
